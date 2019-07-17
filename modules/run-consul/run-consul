@@ -309,6 +309,28 @@ EOF
 )
   fi
 
+  local acl_configuration=""
+  if [ "$enable_acls" == "true" ]; then
+    log_info "Creating ACL configuration"
+    acl_configuration=$(cat <<EOF
+"acl": {
+  "enabled": true,
+  "default_policy": "deny",
+  "enable_token_persistence": true
+},
+EOF
+)
+  fi
+
+  local node_meta_configuration=""
+  if [ "$node_meta" != "" ]; then
+    log_info "Creating node-meta configuration"
+    node_meta_configuration=$(cat <<EOF
+"node-meta": ${node_meta},
+EOF
+)
+  fi
+
   log_info "Creating default Consul configuration"
   local default_config_json=$(cat <<EOF
 {
@@ -324,6 +346,8 @@ EOF
   $gossip_encryption_configuration
   $rpc_encryption_configuration
   $autopilot_configuration
+  $acl_configuration
+  $node_meta_configuration
   "ui": $ui
 }
 EOF
@@ -563,6 +587,14 @@ function run {
       --recursor)
         assert_not_empty "$key" "$2"
         recursors+=("$2")
+        shift
+        ;;
+      --enable-acls)
+        enable_acls="true"
+        ;;
+      --node-meta)
+        assert_not_empty "$key" "$2"
+        node_meta+=("$2")
         shift
         ;;
       --help)
